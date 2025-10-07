@@ -70,8 +70,4 @@ npm start
 ## Gemini Integration
 Set `GEMINI_API_KEY` in `.env` to enable Gemini. The backend will use `google-genai` client if installed; otherwise it falls back to a local sentence-transformers model for embeddings and basic NL-to-SQL heuristics.
 
-## Limitations & Notes
-- This is a functional demo tailored for the assignment. It includes sample schemas and a simple in-memory vector store (FAISS is not bundled).
-- The assignment requires no authentication; for production you should add auth and secure database credentials.
-- For large-scale production, replace the simple caching and in-memory stores with Redis and a proper vector DB.
 
