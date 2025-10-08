@@ -9,17 +9,23 @@ MODEL = None
 def _get_embedder():
     global MODEL
     if MODEL is None:
+        print("INFO: Loading embedding model...")
         MODEL = SentenceTransformer('all-MiniLM-L6-v2')
+        print("INFO: Embedding model loaded.")
     return MODEL
 
 class DocumentProcessor:
     def __init__(self):
         self.index = {}  # simple in-memory store: doc_id -> list of chunks
 
+    # --- NEW METHOD ---
+    def load_model(self):
+        """Triggers the download and loading of the embedding model."""
+        _get_embedder()
+
     def process_document(self, file_path: str):
         text = self.extract_text(file_path)
         chunks = self.dynamic_chunking(text, file_path)
-        # embedding using sentence-transformers as fallback
         embedder = _get_embedder()
         embeddings = embedder.encode(chunks, show_progress_bar=False)
         doc_id = os.path.basename(file_path)
@@ -49,7 +55,6 @@ class DocumentProcessor:
                 return ''
 
     def dynamic_chunking(self, content: str, doc_type: str) -> list:
-        # naive chunking by sentences ~200-300 words per chunk
         if not content:
             return []
         words = content.split()

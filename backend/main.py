@@ -4,11 +4,16 @@ from datetime import datetime
 from flask import Flask, jsonify
 from dotenv import load_dotenv
 from flask_cors import CORS
-from api.routes.schema import schema_bp
-from api.routes.ingestion import ingest_bp
-from api.routes.query import query_bp, init_engine
 import psycopg2
 from psycopg2 import OperationalError
+
+# Import blueprints
+from api.routes.schema import schema_bp
+from api.routes.ingestion import ingest_bp
+from api.routes.query import query_bp
+
+# Import the engine CLASS, not an instance
+from services.query_engine import QueryEngine
 
 load_dotenv()
 
@@ -29,36 +34,21 @@ def create_app():
     
     CORS(app)
     
-    # Initialize query engine
-    init_engine(app)
+    # Create the QueryEngine instance once and attach it to the app.
+    # This makes it available in the application context for all requests.
+    with app.app_context():
+        print("INFO: Initializing Query Engine...")
+        app.engine = QueryEngine(app.config.get('SQLALCHEMY_DATABASE_URI'))
+        print("INFO: Query Engine Initialized.")
     
     # Register blueprints
     app.register_blueprint(schema_bp, url_prefix='/api')
     app.register_blueprint(ingest_bp, url_prefix='/api')
     app.register_blueprint(query_bp, url_prefix='/api')
     
-    # Health check endpoint
     @app.route('/')
     def health_check():
-        db_status, db_message = check_db_connection()
-        return jsonify({
-            'status': 'running',
-            'timestamp': datetime.utcnow().isoformat(),
-            'database': {
-                'status': 'connected' if db_status else 'disconnected',
-                'message': db_message
-            },
-            'endpoints': {
-                'api_docs': '/api/schema',
-                'ingest': '/api/ingest',
-                'query': '/api/query'
-            }
-        })
-    
-    # Simple ping endpoint
-    @app.route('/ping')
-    def ping():
-        return jsonify({'status': 'pong', 'timestamp': datetime.utcnow().isoformat()})
+        return jsonify({ 'status': 'running' })
     
     return app
 
@@ -69,15 +59,4 @@ if __name__ == '__main__':
     debug = os.getenv('FLASK_DEBUG') == '1'
     
     print(f"Starting server on http://localhost:{port}")
-    print(f"Debug mode: {'ON' if debug else 'OFF'}")
-    print("\nAvailable endpoints:")
-    print(f"  • http://localhost:{port}/          - Health check")
-    print(f"  • http://localhost:{port}/ping      - Simple ping")
-    print(f"  • http://localhost:{port}/api/      - API Base")
-    print("\nPress Ctrl+C to stop the server")
-    
-    try:
-        app.run(host='0.0.0.0', port=port, debug=debug)
-    except Exception as e:
-        print(f"\nError starting server: {str(e)}", file=sys.stderr)
-        sys.exit(1)
+    app.run(host='0.0.0.0', port=port, debug=debug)
