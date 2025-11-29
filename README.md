@@ -1,6 +1,4 @@
-# NLP Query Engine - Flask + React (Ekam Apps Assignment)
-
-> **Note:** This project is developed as part of the Ekam Apps assignment.
+# NLP Query Engine - Flask + React
 
 ## System Architecture
 
